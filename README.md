@@ -35,7 +35,7 @@ The `base-depth` tool walks over every position in the BAM/CRAM file and calcula
 The output columns are as follows:
 
 | Column         | Description                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------- |
+|----------------|----------------------------------------------------------------------------------------------------|
 | REF            | The reference sequence name                                                                        |
 | POS            | The position on the reference sequence                                                             |
 | REF_BASE       | The reference base at the position, column excluded if no reference was supplied                   |
@@ -46,9 +46,11 @@ The output columns are as follows:
 | T              | Total T nucleotides seen at this position                                                          |
 | N              | Total N nucleotides seen at this position                                                          |
 | INS            | Total insertions that start at the base to the right of this position                              |
-| HF_INS_LEN     | The length of the most high frequent insertions to the right of this position                      |
-| HF_INS_COUNT   | Total counts for the most high frequent insertions to the right of this position                   |
+| INS_MASTER_SEQ | The master frequent inserted sequence of insertions to the right of this position                  |
+| INS_SEQ_COUNT  | Total counts for the master frequent insertions to the right of this position                      |
 | DEL            | Total deletions covering this position                                                             |
+| DEL_SERIAL_SEQ | The master successive 10 bp sequence of (long) deletions of this position                          |
+| DEL_SEQ_COUNT  | Total counts of above sequence of the master frequent (long) deletions of this position            |
 | REF_SKIP       | Total reference skip operations covering this position                                             |
 | FAIL           | Total reads failing filters that covered this position (their bases were not counted toward depth) |
 | NEAR_MAX_DEPTH | Flag to indicate if this position came within 1% of the max depth specified                        |
@@ -60,17 +62,24 @@ perbase base-depth ./test/test.bam
 Example output
 
 ```text
-REF     POS     REF_BASE        DEPTH   A       C       G       T       N       INS     DEL     REF_SKIP        FAIL    NEAR_MAX_DEPTH
-chr1    709636  T       16      0       0       0       16      0       0       0       0       0   false
-chr1    709637  T       16      0       4       0       12      0       0       0       0       0   false
-chr1    709638  A       16      16      0       0       0       0       0       0       0       0   false
-chr1    709639  G       16      0       0       16      0       0       0       0       0       0   false
-chr1    709640  A       16      16      0       0       0       0       0       0       0       0   false
-chr1    709641  A       16      16      0       0       0       0       0       0       0       0   false
-chr1    709642  G       16      0       0       16      0       0       0       0       0       0   false
-chr1    709643  G       16      0       0       16      0       0       0       0       0       0   false
-chr1    709644  T       16      0       0       0       16      0       0       0       0       0   false
-chr1    709645  G       16      0       0       16      0       0       0       0       0       0   false
+NAME	REF	POS	REF_BASE	DEPTH	A	C	G	T	N	INS	INS_MASTER_SEQ	INS_SEQ_COUNT	DEL	DEL_SUCCESSIVE_SEQ	DEL_SEQ_COUNT	REF_SKIP	FAIL	NEAR_MAX_DEPTH
+EGFR:exon19	7	55242464	T	1351	2	0	2	1337	0	0		0	0		0	0	0	false
+EGFR:exon19	7	55242465	G	1356	2	3	1345	2	0	0		0	4	GAACCAACAT	182	0	0	false
+EGFR:exon19	7	55242466	G	1361	0	1	1168	5	0	0		0	187		0	0	0	false
+EGFR:exon19	7	55242467	A	1382	1195	0	0	0	0	0		0	187		0	0	0	false
+EGFR:exon19	7	55242468	A	1386	1198	0	0	1	0	0		0	187		0	0	0	false
+EGFR:exon19	7	55242469	T	1383	4	2	1	1189	0	0		0	187		0	0	0	false
+EGFR:exon19	7	55242470	T	1401	2	1	0	1211	0	0		0	187		0	0	0	false
+EGFR:exon19	7	55242471	A	1419	1229	0	2	1	0	0		0	187		0	0	0	false
+EGFR:exon19	7	55242472	A	1442	1252	0	0	3	0	0		0	187		0	0	0	false
+EGFR:exon19	7	55242473	G	1445	0	0	1258	0	0	0		0	187		0	0	0	false
+EGFR:exon19	7	55242474	A	1439	1256	0	0	0	0	0		0	183		0	0	0	false
+EGFR:exon19	7	55242475	G	1445	1	1	1441	2	0	0		0	0		0	0	0	false
+EGFR:exon19	7	55242476	A	1448	1446	0	0	2	0	0		0	0		0	0	0	false
+EGFR:exon19	7	55242477	A	1450	1450	0	0	0	0	0		0	0		0	0	0	false
+EGFR:exon19	7	55242478	G	1452	0	187	1262	3	0	0		0	0		0	0	0	false
+EGFR:exon19	7	55242479	C	1479	2	1475	1	0	1	0		0	0		0	0	0	false
+EGFR:exon19	7	55242480	A	1481	1475	1	1	3	1	0		0	0		0	0	0	false
 ```
 
 If the `--mate-fix` flag is passed, each position will first check if there are any mate overlaps and choose the mate with the hightest MAPQ, breaking ties by choosing the first mate that passes filters. Mates that are discarded are not counted toward `FAIL` or `DEPTH`.

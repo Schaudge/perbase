@@ -152,7 +152,7 @@ impl BaseDepth {
         let receiver = par_granges_runner.process()?;
 
         for mut pos in receiver.into_iter() {
-            pos.update_insert_statistic();
+            pos.update_indels_statistic();
             writer.serialize(pos)?
         }
 

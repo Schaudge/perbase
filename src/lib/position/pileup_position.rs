@@ -12,7 +12,7 @@ use serde::Serialize;
 use smartstring::{alias::String, LazyCompact, SmartString};
 use std::collections::HashMap;
 use std::{cmp::Ordering, default};
-use crate::utils::most_frequent;
+use crate::utils::fetch_master_frequent_pair;
 
 /// Hold all information about a position.
 // NB: The max depth that htslib will return is i32::MAX, and the type of pos for htslib is u32
@@ -48,14 +48,21 @@ pub struct PileupPosition {
     pub ins: u32,
     /// Possible insert base length for the (above) insertions
     #[serde(skip_serializing)]
-    pub ins_len_map: HashMap<u32, usize>,
-    /// the most frequency insert length with bp flag
-    pub hf_ins_len: std::string::String,
-    /// the most frequency for the (above) insert length
-    pub hf_ins_count: usize,
+    pub ins_seq_map: HashMap<String, usize>,
+    /// the most frequency insert sequence
+    pub ins_master_seq: String,
+    /// the count for the (above) master (high frequency) insert sequence
+    pub ins_seq_count: usize,
     /// Number of deletions at this position.
     pub del: u32,
-    /// Number of refskips at this position. Does not count toward depth.
+    /// Possible (long) deletion for successive snv phase
+    #[serde(skip_serializing)]
+    pub del_seq_map: HashMap<String, usize>,
+    /// the most frequency successive 10bp sequences for (long) deletion
+    pub del_successive_seq: String,
+    /// the count of most frequency successive sequences
+    pub del_seq_count: usize,
+    /// Number of ref skips at this position. Does not count toward depth.
     pub ref_skip: u32,
     /// Number of reads failing filters at this position.
     pub fail: u32,
@@ -90,6 +97,7 @@ impl PileupPosition {
             self.fail += 1;
             return;
         }
+
         // NB: Order matters here, a refskip is true for both is_del and is_refskip
         // while a true del is only true for is_del
         if alignment.is_refskip() {
@@ -98,8 +106,31 @@ impl PileupPosition {
         } else if alignment.is_del() {
             self.del += 1;
         } else {
-            // We have an actual base!
+            // Check for insertions and (long) deletions
+            match alignment.indel() {
+                bam::pileup::Indel::Ins(len) => {
+                    self.ins += 1;
+                    let ins_pos= alignment.qpos().unwrap();
+                    let mut serial_seq: String = String::from("");
+                    for ip in ins_pos + 1..ins_pos + (len as usize) + 1 {
+                        serial_seq.push(record.seq()[ip] as char);
+                    }
+                    *self.ins_seq_map.entry(serial_seq).or_insert(0) += 1;
+                }
+                bam::pileup::Indel::Del(len) => {
+                    let del_pos = alignment.qpos().unwrap();
+                    if len > 5 && del_pos + 11 < record.seq_len() {
+                        let mut serial_seq: String = String::from("");
+                        for ip in del_pos + 1..del_pos + 11 {
+                            serial_seq.push(record.seq()[ip] as char);
+                        }
+                        *self.del_seq_map.entry(serial_seq).or_insert(0) += 1;
+                    }
+                }
+                _ => (),
+            }
 
+            // We have an actual base!
             // Check if we are checking the base quality score
             if let Some(base_qual_filter) = base_filter {
                 // Check if the base quality score is greater or equal to than the cutoff
@@ -124,14 +155,7 @@ impl PileupPosition {
                     _ => self.n += 1,
                 }
             }
-            // Check for insertions
-            match alignment.indel() {
-                bam::pileup::Indel::Ins(len) => {
-                    self.ins += 1;
-                    *self.ins_len_map.entry(len).or_insert(0) += 1;
-                }
-                _ => (),
-            }
+
         }
     }
 
@@ -244,10 +268,13 @@ impl PileupPosition {
         String::from(name)
     }
 
-    /// update insert length statistic, after
-    pub fn update_insert_statistic(&mut self) -> () {
-        let hf_ins_len_res = most_frequent(&self.ins_len_map);
-        self.hf_ins_count = hf_ins_len_res.0;
-        self.hf_ins_len = hf_ins_len_res.1.to_string() + " bp";
+    /// update the indels statistic, after all reads were evaluated
+    pub fn update_indels_statistic(&mut self) -> () {
+        let ins_top_pair= fetch_master_frequent_pair(&self.ins_seq_map);
+        self.ins_seq_count = ins_top_pair.0;
+        self.ins_master_seq = ins_top_pair.1;
+        let del_top_pair= fetch_master_frequent_pair(&self.del_seq_map);
+        self.del_seq_count = del_top_pair.0;
+        self.del_successive_seq = del_top_pair.1;
     }
 }
