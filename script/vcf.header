@@ -1,0 +1,8 @@
+##fileformat=VCFv4.2
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth; some reads may have been filtered">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=AF,Number=1,Type=Float,Description="Allele fractions of alternate alleles in the tumor">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total read depth">
+##FILTER=<ID=PASS,Description="Site contains at least one allele that passes filters">
+##FILTER=<ID=low_allele_frac,Description="Allele fraction is below specified threshold">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{}
