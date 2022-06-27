@@ -4,8 +4,6 @@ Created on Tue Mar 16 10:05:18 2021
 
 @author: sunxj
 """
-
-
 import sys
 from collections import defaultdict
 
@@ -68,8 +66,11 @@ def final_result(sta_list, out_file):
                     print(pos)
                     seqname_all_reads_on_cpg += dat_dict[seqname][pos-1]['depth']
                     seqname_methy_reads_on_cpg += dat_dict[seqname][pos-1]['methy']
-    write_line = [seqname, seqname_all_reads_on_cpg, seqname_methy_reads_on_cpg,
-                  float(seqname_methy_reads_on_cpg / (seqname_all_reads_on_cpg + seqname_methy_reads_on_cpg))]
+    if len(sta_list) < 2:
+        write_line = ["NA", "NA", "NA", "NA"]
+    else:
+        write_line = [seqname, seqname_all_reads_on_cpg, seqname_methy_reads_on_cpg,
+                      float(seqname_methy_reads_on_cpg / (seqname_all_reads_on_cpg + seqname_methy_reads_on_cpg))]
     write_list_out([title_list, write_line], out_file)
 
 
