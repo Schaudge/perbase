@@ -566,9 +566,9 @@ dependencies = [
 
 [[package]]
 name = "gzp"
-version = "0.9.5"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87ef407cfc7e2024cc7685ed67ad109e6134c613857765e5334483a7deaccb5b"
+checksum = "bcaa63633f99fe42694dbc0004cdc2ba160d9a303f0d08d2e50380a500a19cf3"
 dependencies = [
  "byteorder",
  "bytes",
@@ -608,14 +608,14 @@ dependencies = [
 [[package]]
 name = "hts-sys"
 version = "2.0.2"
-source = "git+https://github.com/rust-bio/rust-htslib#e3c8e81e7f33c0cef4d854e0b9f5b4b43321c3b4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72c443906f4bac8b8cfe67e4e9d9ca83a454b70a092e1764133d19d5c5c7c1e2"
 dependencies = [
  "bzip2-sys",
  "cc",
  "curl-sys",
  "fs-utils",
  "glob",
- "libdeflate-sys",
  "libz-sys",
  "lzma-sys",
  "openssl-sys",
@@ -1288,8 +1288,9 @@ dependencies = [
 
 [[package]]
 name = "rust-htslib"
-version = "0.38.2"
-source = "git+https://github.com/rust-bio/rust-htslib#e3c8e81e7f33c0cef4d854e0b9f5b4b43321c3b4"
+version = "0.39.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "239ef7334dbf59acd56b7a6fa62a525ed7e36d6239a686ed4ff61bc794108e53"
 dependencies = [
  "bio-types",
  "byteorder",
