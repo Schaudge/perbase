@@ -1,16 +1,6 @@
-<p align="center">
-<img width="500" height="250" src="./perbase.png">
-</p>
+# perbase
 
-![Publish](https://github.com/sstadick/perbase/workflows/Publish/badge.svg)
-![Rust](https://github.com/sstadick/perbase/workflows/Rust/badge.svg)
-[![API docs](https://img.shields.io/badge/API-documentation-blue.svg)](https://docs.rs/perbase)
-[![Crates.io](https://img.shields.io/crates/v/perbase.svg)](https://crates.io/crates/perbase)
-[![Conda](https://anaconda.org/anaconda/anaconda/badges/installer/conda.svg)](https://anaconda.org/bioconda/perbase)
-
-A highly parallelized utility for analyzing metrics at a per-base level.
-
-If a metric is missing, or performance is lacking. Please file a bug/feature ticket in issues.
+A highly parallelized utility for variation statistics at per genome position.
 
 ## Why?
 
@@ -19,12 +9,10 @@ Why `perbase` when so many other tools are out there? `perbase` leverages Rust's
 ## Installation
 
 ```bash
-conda install -c bioconda perbase
-# OR
-cargo install perbase
+git clone https://github.com/Schaudge/perbase
+cd perbase
+cargo build --release
 ```
-
-You can also download a binary from the [releases](https://github.com/sstadick/perbase/releases) page.
 
 ## Tools
 
