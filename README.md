@@ -26,26 +26,26 @@ The `base-depth` tool walks over every position in the BAM/CRAM file and calcula
 
 The output columns are as follows:
 
-| Column         | Description                                                                                        |
-|----------------|----------------------------------------------------------------------------------------------------|
-| REF            | The reference sequence name                                                                        |
-| POS            | The position on the reference sequence                                                             |
-| REF_BASE       | The reference base at the position, column excluded if no reference was supplied                   |
-| DEPTH          | The total depth at the position SUM(A, C, T, G, DEL)                                               |
-| A              | Total A nucleotides seen at this position                                                          |
-| C              | Total C nucleotides seen at this position                                                          |
-| G              | Total G nucleotides seen at this position                                                          |
-| T              | Total T nucleotides seen at this position                                                          |
-| N              | Total N nucleotides seen at this position                                                          |
-| INS            | Total insertions that start at the base to the right of this position                              |
-| INS_MASTER_SEQ | The master frequent inserted sequence of insertions to the right of this position                  |
-| INS_SEQ_COUNT  | Total counts for the master frequent insertions to the right of this position                      |
-| DEL            | Total deletions covering this position                                                             |
-| DEL_SERIAL_SEQ | The master successive 10 bp sequence of (long) deletions of this position                          |
-| DEL_SEQ_COUNT  | Total counts of above sequence of the master frequent (long) deletions of this position            |
-| REF_SKIP       | Total reference skip operations covering this position                                             |
-| FAIL           | Total reads failing filters that covered this position (their bases were not counted toward depth) |
-| NEAR_MAX_DEPTH | Flag to indicate if this position came within 1% of the max depth specified                        |
+| Column          | Description                                                                                        |
+|-----------------|----------------------------------------------------------------------------------------------------|
+| REF             | The reference sequence name                                                                        |
+| POS             | The position on the reference sequence                                                             |
+| REF_BASE        | The reference base at the position, column excluded if no reference was supplied                   |
+| DEPTH           | The total depth at the position SUM(A, C, T, G, DEL)                                               |
+| A               | Total A nucleotides seen at this position                                                          |
+| C               | Total C nucleotides seen at this position                                                          |
+| G               | Total G nucleotides seen at this position                                                          |
+| T               | Total T nucleotides seen at this position                                                          |
+| N               | Total N nucleotides seen at this position                                                          |
+| INS             | Total insertions that start at the base to the right of this position                              |
+| INS_MASTER_SEQ  | The master frequent inserted sequence of insertions to the right of this position                  |
+| INS_SEQ_COUNT   | Total counts for the master frequent insertions to the right of this position                      |
+| DEL             | Total deletions covering this position                                                             |
+| DEL_CONTEXT_SEQ | The master 20 bps context sequence of (long) deletions of this position                            |
+| DEL_SEQ_COUNT   | Total counts of above sequence of the master frequent (long) deletions of this position            |
+| REF_SKIP        | Total reference skip operations covering this position                                             |
+| FAIL            | Total reads failing filters that covered this position (their bases were not counted toward depth) |
+| NEAR_MAX_DEPTH  | Flag to indicate if this position came within 1% of the max depth specified                        |
 
 ```bash
 perbase base-depth ./test/test.bam
@@ -54,7 +54,7 @@ perbase base-depth ./test/test.bam
 Example output
 
 ```text
-NAME	REF	POS	REF_BASE	DEPTH	A	C	G	T	N	INS	INS_MASTER_SEQ	INS_SEQ_COUNT	DEL	DEL_SUCCESSIVE_SEQ	DEL_SEQ_COUNT	REF_SKIP	FAIL	NEAR_MAX_DEPTH
+NAME	REF	POS	REF_BASE	DEPTH	A	C	G	T	N	INS	INS_MASTER_SEQ	INS_SEQ_COUNT	DEL	DEL_CONTEXT_SEQ	DEL_SEQ_COUNT	REF_SKIP	FAIL	NEAR_MAX_DEPTH
 EGFR:exon19	7	55242464	T	1351	2	0	2	1337	0	0		0	0		0	0	0	false
 EGFR:exon19	7	55242465	G	1356	2	3	1345	2	0	0		0	4	GAACCAACAT	182	0	0	false
 EGFR:exon19	7	55242466	G	1361	0	1	1168	5	0	0		0	187		0	0	0	false

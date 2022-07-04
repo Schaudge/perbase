@@ -55,12 +55,12 @@ pub struct PileupPosition {
     pub ins_seq_count: usize,
     /// Number of deletions at this position.
     pub del: u32,
-    /// Possible (long) deletion for successive snv phase
+    /// Possible (long) deletion for context variation phase
     #[serde(skip_serializing)]
     pub del_seq_map: HashMap<String, usize>,
-    /// the most frequency successive 10bp sequences for (long) deletion
-    pub del_successive_seq: String,
-    /// the count of most frequency successive sequences
+    /// the most frequency context 10bp sequences for master (long) deletion
+    pub del_context_seq: String,
+    /// the count of most frequency context sequences
     pub del_seq_count: usize,
     /// Number of ref skips at this position. Does not count toward depth.
     pub ref_skip: u32,
@@ -119,9 +119,9 @@ impl PileupPosition {
                 }
                 bam::pileup::Indel::Del(len) => {
                     let del_pos = alignment.qpos().unwrap();
-                    if len > 5 && del_pos + 11 < record.seq_len() {
+                    if len > 5 && del_pos > 9 && del_pos + 11 < record.seq_len() {
                         let mut serial_seq: String = String::from("");
-                        for ip in del_pos + 1..del_pos + 11 {
+                        for ip in del_pos - 9..del_pos + 11 {
                             serial_seq.push(record.seq()[ip] as char);
                         }
                         *self.del_seq_map.entry(serial_seq).or_insert(0) += 1;
@@ -275,6 +275,6 @@ impl PileupPosition {
         self.ins_master_seq = ins_top_pair.1;
         let del_top_pair= fetch_master_frequent_pair(&self.del_seq_map);
         self.del_seq_count = del_top_pair.0;
-        self.del_successive_seq = del_top_pair.1;
+        self.del_context_seq = del_top_pair.1;
     }
 }
