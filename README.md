@@ -86,6 +86,10 @@ tabix -S 1 -s 1 -b 2 -e 2 ./output.tsv.gz
 # Query all positions overlapping region
 tabix output.tsv.gz chr1:5-10
 ```
+### convert base-depth out (uncompressed) into VCF format (only support complex long deletions currently, other cases were trivial!)
+```bash
+python3 script/convert_indels_vcf.py [base-depth out] [vcf result name] [sample id in VCF FORMAT field]
+```
 
 Usage:
 
