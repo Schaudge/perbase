@@ -53,7 +53,7 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
     :return: list []
     """
     complement_indels_list = []
-    successive_segment_location = [0, 0, "", ""]     # [chromosome, start, ref, alt]
+    successive_segment_location = [0, 0, "", ""]     # [chromosome, position, ref, alt]
     successive_segment_stats = [0, 0, 0, 0, 0]       # [del_length, ref_counts, alt_counts, total_depth, master_count]
     preceding_sequence = ""
     if path.exists(perbase_result_path):
@@ -61,9 +61,10 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
         with open(perbase_result_path) as pinput:
             next(pinput)
             for line in pinput:
-                __, chrom, start, ref, depth, a, c, g, t, __, ins, __, __, dels, context_seq, master_count, __, __, near_max = line.strip().split("\t")
+                __, chrom, pos, ref, depth, a, c, g, t, __, ins, __, __, dels, context_seq, master_count, __, __, near_max = line.strip().split("\t")
+                position = int(pos)
                 ref_count = int(a) if ref == "A" else (int(c) if ref == "C" else (int(g) if ref == "G" else int(t)))
-                if chrom != successive_segment_location[0] or int(start) > successive_segment_location[1] + 500:
+                if chrom != successive_segment_location[0] or position > successive_segment_location[1] + 500:
                     if successive_segment_stats[0] >= min_indels_length:
                         if len(successive_segment_location[2]) <= successive_segment_stats[0] + len(successive_segment_location[3]):
                              alt_trim_length = len(successive_segment_location[2]) - successive_segment_stats[0]
@@ -82,8 +83,9 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                             for px in range(min_compare_size, 0, -1):
                                 if context_seq[10 - px] != preceding_sequence[preceding_seq_len - px]:
                                     preceding_seq_pair = (preceding_sequence[preceding_seq_len-px:], context_seq[10-px:10])
+                                    position = position - px + 1
                                     break
-                        successive_segment_location = [chrom, int(start), preceding_seq_pair[0], preceding_seq_pair[1] + context_seq[10:]]
+                        successive_segment_location = [chrom, position, preceding_seq_pair[0], preceding_seq_pair[1] + context_seq[10:]]
                         successive_segment_stats = [0, ref_count, 0, int(depth), int(master_count)]
                         opened_successive_seq = True
                     elif opened_successive_seq:
