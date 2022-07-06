@@ -64,12 +64,12 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                 __, chrom, start, ref, depth, a, c, g, t, __, ins, __, __, dels, context_seq, master_count, __, __, near_max = line.strip().split("\t")
                 ref_count = int(a) if ref == "A" else (int(c) if ref == "C" else (int(g) if ref == "G" else int(t)))
                 if chrom != successive_segment_location[0] or int(start) > successive_segment_location[1] + 500:
-                    preceding_sequence = ""
                     if successive_segment_stats[0] >= min_indels_length:
                         if len(successive_segment_location[2]) <= successive_segment_stats[0] + len(successive_segment_location[3]):
                              alt_trim_length = len(successive_segment_location[2]) - successive_segment_stats[0]
                              successive_segment_location[3] = successive_segment_location[3][0:alt_trim_length]
                         complement_indels_list.append(successive_segment_location + successive_segment_stats)
+                        preceding_sequence = ""
                     successive_segment_location = [0, 0, "", ""]
                     successive_segment_stats = [0, 0, 0, 0, 0]
                 preceding_sequence += ref
@@ -78,11 +78,11 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                         preceding_seq_pair = (ref, ref)
                         preceding_seq_len = len(preceding_sequence)
                         min_compare_size = min(preceding_seq_len, 10)
-                        if context_seq[10-min_compare_size:] != preceding_sequence[preceding_seq_len-min_compare_size:]:
-                            for px in range(min_compare_size, 1, -1):
+                        if context_seq[10-min_compare_size:10] != preceding_sequence[preceding_seq_len-min_compare_size:]:
+                            for px in range(min_compare_size, 0, -1):
                                 if context_seq[10 - px] != preceding_sequence[preceding_seq_len - px]:
+                                    preceding_seq_pair = (preceding_sequence[preceding_seq_len-px:], context_seq[10-px:10])
                                     break
-                            preceding_seq_pair = (preceding_sequence[preceding_seq_len-px], context_seq[10-px:11])
                         successive_segment_location = [chrom, int(start), preceding_seq_pair[0], preceding_seq_pair[1] + context_seq[10:]]
                         successive_segment_stats = [0, ref_count, 0, int(depth), int(master_count)]
                         opened_successive_seq = True
