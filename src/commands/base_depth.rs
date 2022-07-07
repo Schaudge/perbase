@@ -96,6 +96,10 @@ pub struct BaseDepth {
     #[structopt(long, short = "Q")]
     min_base_quality_score: Option<u8>,
 
+    /// the (upstream and downstream) context sequence length for insert and deletion variation in output
+    #[structopt(long, default_value = "10")]
+    indel_context_size: usize,
+
     /// Output positions as 0-based instead of 1-based.
     #[structopt(long, short = "z")]
     zero_base: bool,
@@ -133,6 +137,7 @@ impl BaseDepth {
             if self.zero_base { 0 } else { 1 },
             read_filter,
             self.max_depth,
+            self.indel_context_size,
             self.ref_cache_size,
             self.min_base_quality_score,
         );
@@ -180,6 +185,8 @@ struct BaseProcessor<F: ReadFilter> {
     read_filter: F,
     /// max depth to pass to htslib pileup engine, max value is MAX(i32)
     max_depth: u32,
+    /// context sequence length for deletion variation
+    context_size: usize,
     /// the cutoff at which we start logging warnings about depth being close to max depth
     max_depth_warnings_cutoff: u32,
     /// an optional base quality score. If Some(number) if the base quality is not >= that number the base is treated as an `N`
@@ -196,6 +203,7 @@ impl<F: ReadFilter> BaseProcessor<F> {
         coord_base: u32,
         read_filter: F,
         max_depth: u32,
+        context_size: usize,
         ref_buffer_capacity: usize,
         min_base_quality_score: Option<u8>,
     ) -> Self {
@@ -214,6 +222,7 @@ impl<F: ReadFilter> BaseProcessor<F> {
             coord_base,
             read_filter,
             max_depth,
+            context_size,
             // Set cutoff to 1% of whatever max_depth is.
             max_depth_warnings_cutoff: max_depth - (max_depth as f64 * 0.01) as u32,
             min_base_quality_score,
@@ -261,6 +270,7 @@ impl<F: ReadFilter> RegionProcessor for BaseProcessor<F> {
                             &header,
                             &self.read_filter,
                             self.min_base_quality_score,
+                            self.context_size,
                         )
                     } else {
                         PileupPosition::from_pileup(
@@ -268,6 +278,7 @@ impl<F: ReadFilter> RegionProcessor for BaseProcessor<F> {
                             &header,
                             &self.read_filter,
                             self.min_base_quality_score,
+                            self.context_size,
                             region_name.parse().unwrap(),
                         )
                     };
@@ -415,6 +426,7 @@ mod tests {
             1,
             read_filter,
             500_000,
+            10,
             cpus,
             None,
         );
@@ -458,6 +470,7 @@ mod tests {
             1,
             read_filter,
             500_000,
+            10,
             cpus,
             None,
         );
@@ -501,6 +514,7 @@ mod tests {
             1,
             read_filter,
             500_000,
+            10,
             cpus,
             Some(base_quality),
         );
@@ -544,6 +558,7 @@ mod tests {
             1,
             read_filter,
             500_000,
+            10,
             cpus,
             Some(base_quality),
         );

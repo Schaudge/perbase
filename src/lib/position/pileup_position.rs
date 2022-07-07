@@ -91,6 +91,7 @@ impl PileupPosition {
         record: Record,
         read_filter: &F,
         base_filter: Option<u8>,
+        context_size: usize,
     ) {
         if !read_filter.filter_read(&record) {
             self.depth -= 1;
@@ -119,9 +120,9 @@ impl PileupPosition {
                 }
                 bam::pileup::Indel::Del(len) => {
                     let del_pos = alignment.qpos().unwrap();
-                    if len > 5 && del_pos > 9 && del_pos + 11 < record.seq_len() {
+                    if len > 5 && del_pos >= context_size && del_pos + context_size <= record.seq_len() {
                         let mut serial_seq: String = String::from("");
-                        for ip in del_pos - 9..del_pos + 11 {
+                        for ip in del_pos - context_size - 1..del_pos + context_size + 1 {
                             serial_seq.push(record.seq()[ip] as char);
                         }
                         *self.del_seq_map.entry(serial_seq).or_insert(0) += 1;
@@ -176,6 +177,7 @@ impl PileupPosition {
         header: &bam::HeaderView,
         read_filter: &F,
         base_filter: Option<u8>,
+        var_context_size: usize,
         region_name: String,
     ) -> Self {
         let name = Self::compact_refseq(header, pileup.tid());
@@ -185,7 +187,7 @@ impl PileupPosition {
 
         for alignment in pileup.alignments() {
             let record = alignment.record();
-            Self::update(&mut pos, &alignment, record, read_filter, base_filter);
+            Self::update(&mut pos, &alignment, record, read_filter, base_filter, var_context_size);
         }
         pos
     }
@@ -212,6 +214,7 @@ impl PileupPosition {
         header: &bam::HeaderView,
         read_filter: &F,
         base_filter: Option<u8>,
+        var_context_size: usize,
     ) -> Self {
         let name = Self::compact_refseq(header, pileup.tid());
         // make output 1-based
@@ -256,7 +259,7 @@ impl PileupPosition {
                 .unwrap();
             // decrement depth for each read not used
             pos.depth -= total_reads - 1;
-            Self::update(&mut pos, &alignment, record, read_filter, base_filter);
+            Self::update(&mut pos, &alignment, record, read_filter, base_filter, var_context_size);
         }
         pos
     }

@@ -63,6 +63,7 @@ impl<F: ReadFilter> RegionProcessor for BasicProcessor<F> {
                         &header,
                         &self.read_filter,
                         None,
+                        10,
                         region_name.parse().unwrap(),
                     ))
                 } else {
@@ -105,7 +106,7 @@ fn main() -> Result<()> {
     let receiver = par_granges_runner.process()?;
     // Pull the in-order results from the receiver channel
     receiver.into_iter().for_each(|mut p: PileupPosition| {
-        p.update_insert_statistic();
+        p.update_indels_statistic();
         // Note that the returned values are required to be `serde::Serialize`, so more fancy things
         // than just debug printing are doable.
         println!("{:?}", p);
