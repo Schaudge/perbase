@@ -64,14 +64,14 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                 __, chrom, pos, ref, depth, a, c, g, t, __, ins, __, __, dels, context_seq, master_count, __, __, near_max = line.strip().split("\t")
                 position = int(pos)
                 ref_count = int(a) if ref == "A" else (int(c) if ref == "C" else (int(g) if ref == "G" else int(t)))
-                if chrom != successive_segment_location[0] or position > successive_segment_location[1] + 500:
+                if chrom != successive_segment_location[0] or position > successive_segment_location[1] + 200:
+                    preceding_sequence = ""
                     if successive_segment_stats[0] >= min_indels_length:
                         if len(successive_segment_location[2]) <= successive_segment_stats[0] + len(successive_segment_location[3]):
                              alt_trim_length = len(successive_segment_location[2]) - successive_segment_stats[0]
                              successive_segment_location[3] = successive_segment_location[3][0:alt_trim_length]
                         complement_indels_list.append(successive_segment_location + successive_segment_stats)
-                        preceding_sequence = ""
-                    successive_segment_location = [0, 0, "", ""]
+                    successive_segment_location = [chrom, position, "", ""]
                     successive_segment_stats = [0, 0, 0, 0, 0]
                 preceding_sequence += ref
                 if int(master_count) > min_indels_counts:
@@ -100,7 +100,7 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                     successive_segment_stats = [raw + add for raw, add
                                                 in zip(successive_segment_stats, [same_del_increase, ref_count, int(dels), int(depth), 0])]
                 elif not opened_successive_seq and 0 < successive_segment_stats[0] < min_indels_length:
-                    successive_segment_location = [0, 0, "", ""]
+                    successive_segment_location = [chrom, position, "", ""]
                     successive_segment_stats = [0, 0, 0, 0, 0]
                 elif opened_successive_seq and successive_segment_stats[0] >= min_indels_length:
                     if len(successive_segment_location[2]) < successive_segment_stats[0] + len(successive_segment_location[3]):
