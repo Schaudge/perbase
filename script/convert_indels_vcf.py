@@ -43,19 +43,22 @@ def convert_to_vcf(sorted_indel_list, vcf_output="check.vcf", sample_id="XXX",
             vcf_out.write(vcf_record_line + "\n")
 
 
-def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_indels_length=5) -> list:
+def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_indels_length=5,
+                              partition_coefficient=1.2) -> list:
     """
     create standard review information from perbase output file
     only for long deletion (currently)!
     :param perbase_result_path: perbase output file
     :param min_indels_counts: the minimum indel counts for postive mutation
     :param min_indels_length: the minimum length for successive indels
+    :param partition_coefficient: used for separate two adjacent indels events
     :return: list []
     """
     complement_indels_list = []
     successive_segment_location = [0, 0, "", ""]     # [chromosome, position, ref, alt]
     successive_segment_stats = [0, 0, 0, 0, 0]       # [del_length, ref_counts, alt_counts, total_depth, master_count]
     preceding_sequence = ""
+    preceding_del_list = []
     if path.exists(perbase_result_path):
         opened_successive_seq = False
         with open(perbase_result_path) as pinput:
@@ -63,45 +66,67 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
             for line in pinput:
                 __, chrom, pos, ref, depth, a, c, g, t, __, ins, __, __, dels, context_seq, master_count, __, __, near_max = line.strip().split("\t")
                 position = int(pos)
+                del_master_count = int(master_count)
                 ref_count = int(a) if ref == "A" else (int(c) if ref == "C" else (int(g) if ref == "G" else int(t)))
                 if chrom != successive_segment_location[0] or position > successive_segment_location[1] + 200:
                     preceding_sequence = ""
+                    preceding_del_list = []
                     if successive_segment_stats[0] >= min_indels_length:
                         if len(successive_segment_location[2]) <= successive_segment_stats[0] + len(successive_segment_location[3]):
-                             alt_trim_length = len(successive_segment_location[2]) - successive_segment_stats[0]
-                             successive_segment_location[3] = successive_segment_location[3][0:alt_trim_length]
+                            alt_trim_length = len(successive_segment_location[2]) - successive_segment_stats[0]
+                            successive_segment_location[3] = successive_segment_location[3][0:alt_trim_length]
                         complement_indels_list.append(successive_segment_location + successive_segment_stats)
                     successive_segment_location = [chrom, position, "", ""]
                     successive_segment_stats = [0, 0, 0, 0, 0]
                 preceding_sequence += ref
-                if int(master_count) > min_indels_counts:
-                    if int(master_count) > successive_segment_stats[4]:
+                if del_master_count > min_indels_counts:
+                    if del_master_count > successive_segment_stats[4] * partition_coefficient:
                         preceding_seq_pair = (ref, ref)
-                        preceding_seq_len = len(preceding_sequence)
-                        min_compare_size = min(preceding_seq_len, 10)
-                        if context_seq[10-min_compare_size:10] != preceding_sequence[preceding_seq_len-min_compare_size:]:
+                        preceding_del_size = 0
+                        deletion_back_size = 0
+                        for del_pos, del_count, del_depth in preceding_del_list:
+                            if del_master_count * 0.98 <= del_count < del_master_count * 1.5 and \
+                                    position <= del_pos + 10:
+                                preceding_del_size += 1
+                                if deletion_back_size < position - del_pos:
+                                    deletion_back_size = position - del_pos + 1
+                        under_trimmed_seq = preceding_sequence
+                        prefix_context_length = 10
+                        if preceding_del_size > 0:
+                            under_trimmed_seq = preceding_sequence[0:len(preceding_sequence) - deletion_back_size]
+                            prefix_context_length = 10 - deletion_back_size + preceding_del_size
+                            preceding_seq_pair = (preceding_sequence[-1 * deletion_back_size:], context_seq[prefix_context_length:10])
+                            position -= (deletion_back_size - 1)
+                        preceding_seq_len = len(under_trimmed_seq)
+                        min_compare_size = min(preceding_seq_len, prefix_context_length)
+                        if context_seq[prefix_context_length - min_compare_size:prefix_context_length] != \
+                                under_trimmed_seq[preceding_seq_len - min_compare_size:]:
                             for px in range(min_compare_size, 0, -1):
-                                if context_seq[10 - px] != preceding_sequence[preceding_seq_len - px]:
-                                    preceding_seq_pair = (preceding_sequence[preceding_seq_len-px:], context_seq[10-px:10])
+                                if context_seq[prefix_context_length - px] != under_trimmed_seq[preceding_seq_len - px]:
+                                    preceding_seq_pair = (preceding_sequence[len(preceding_sequence)-px:], context_seq[10-px:10])
                                     position = position - px + 1
                                     break
                         successive_segment_location = [chrom, position, preceding_seq_pair[0], preceding_seq_pair[1] + context_seq[10:]]
-                        successive_segment_stats = [0, ref_count, 0, int(depth), int(master_count)]
+                        successive_segment_stats = [preceding_del_size, ref_count, 0, int(depth), del_master_count]
                         opened_successive_seq = True
-                    elif opened_successive_seq:
+                    elif opened_successive_seq and len(successive_segment_location[2]) < successive_segment_stats[0] + len(successive_segment_location[3]):
                         successive_segment_location[2] += ref
                         successive_segment_stats = [raw + add for raw, add
                                                     in zip(successive_segment_stats, [1, ref_count, int(dels), int(depth), 0])]
-                elif opened_successive_seq and int(dels) > min_indels_counts:
+                elif opened_successive_seq and int(dels) > min_indels_counts and \
+                        len(successive_segment_location[2]) < successive_segment_stats[0] + len(successive_segment_location[3]):
                     estimated_del_depth = int(dels) * (len(successive_segment_location[2]) - 1)
                     same_del_increase = 1 if estimated_del_depth >= successive_segment_stats[2] * 0.9 or \
                                              (int(dels) > 201 and estimated_del_depth >= successive_segment_stats[2] * 0.7) else 0
                     successive_segment_location[2] += ref
                     successive_segment_stats = [raw + add for raw, add
                                                 in zip(successive_segment_stats, [same_del_increase, ref_count, int(dels), int(depth), 0])]
-                elif not opened_successive_seq and 0 < successive_segment_stats[0] < min_indels_length:
-                    successive_segment_location = [chrom, position, "", ""]
-                    successive_segment_stats = [0, 0, 0, 0, 0]
+                elif not opened_successive_seq:
+                    if 0 < successive_segment_stats[0] < min_indels_length:
+                        successive_segment_location = [chrom, position, "", ""]
+                        successive_segment_stats = [0, 0, 0, 0, 0]
+                    if int(dels) > min_indels_counts:
+                        preceding_del_list.append((position, int(dels), int(depth)))
                 elif opened_successive_seq and successive_segment_stats[0] >= min_indels_length:
                     if len(successive_segment_location[2]) < successive_segment_stats[0] + len(successive_segment_location[3]):
                         successive_segment_location[2] += ref
