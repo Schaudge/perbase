@@ -112,7 +112,7 @@ impl PileupPosition {
                 bam::pileup::Indel::Ins(len) => {
                     self.ins += 1;
                     let ins_pos= alignment.qpos().unwrap();
-                    let mut serial_seq: String = String::from("");
+                    let mut serial_seq: String = String::new();
                     for ip in ins_pos + 1..ins_pos + (len as usize) + 1 {
                         serial_seq.push(record.seq()[ip] as char);
                     }
@@ -121,7 +121,7 @@ impl PileupPosition {
                 bam::pileup::Indel::Del(len) => {
                     let del_pos = alignment.qpos().unwrap();
                     if len > 5 && del_pos >= context_size && del_pos + context_size < record.seq_len() {
-                        let mut serial_seq: String = String::from("");
+                        let mut serial_seq: String = String::new();
                         for ip in del_pos - context_size + 1..del_pos + context_size + 1 {
                             serial_seq.push(record.seq()[ip] as char);
                         }
