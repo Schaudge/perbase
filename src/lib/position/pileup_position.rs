@@ -12,7 +12,7 @@ use serde::Serialize;
 use smartstring::{alias::String, LazyCompact, SmartString};
 use std::collections::HashMap;
 use std::{cmp::Ordering, default};
-use crate::utils::fetch_master_frequent_pair;
+use crate::utils::pop_master_frequent_pair;
 
 /// Hold all information about a position.
 // NB: The max depth that htslib will return is i32::MAX, and the type of pos for htslib is u32
@@ -273,10 +273,10 @@ impl PileupPosition {
 
     /// update the indels statistic, after all reads were evaluated
     pub fn update_indels_statistic(&mut self) -> () {
-        let ins_top_pair= fetch_master_frequent_pair(&self.ins_seq_map);
+        let ins_top_pair= pop_master_frequent_pair(&self.ins_seq_map);
         self.ins_seq_count = ins_top_pair.0;
         self.ins_master_seq = ins_top_pair.1;
-        let del_top_pair= fetch_master_frequent_pair(&self.del_seq_map);
+        let del_top_pair= pop_master_frequent_pair(&self.del_seq_map);
         self.del_seq_count = del_top_pair.0;
         self.del_context_seq = del_top_pair.1;
     }

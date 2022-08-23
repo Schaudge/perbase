@@ -162,28 +162,15 @@ lazy_static! {
 
 /// pop the master frequency element in a (key cloneable) HashMap collection!
 pub fn pop_master_frequent_pair<T>(collection: &HashMap<T, usize>) -> (usize, T)
-    where T: Hash + Eq + Ord + Copy + Clone + Default, {
+    where T: Hash + Eq + Ord + Clone + Default, {
 
     let mut heap = BinaryHeap::with_capacity(3);
     for (x, count) in collection.into_iter() {
         heap.push((count, x));
     }
     match heap.pop() {
-        Some(qualified_return) => (*qualified_return.0, *qualified_return.1),
+        Some(qualified_return) => (*qualified_return.0, qualified_return.1.clone()),
         None => (0, Default::default()),
     }
 }
 
-/// fetch the master frequency element pair in a String HashMap collection!
-pub fn fetch_master_frequent_pair(collection: &HashMap<smartstring::alias::String, usize>)
-    -> (usize, smartstring::alias::String) {
-    let mut heap = BinaryHeap::with_capacity(3);
-    for (x, count) in collection.into_iter() {
-        heap.push((count, x));
-    }
-    match heap.pop() {
-        Some(qualified_return) => (*qualified_return.0,
-                                   smartstring::alias::String::from(qualified_return.1.clone())),
-        None => (0, Default::default()),
-    }
-}
