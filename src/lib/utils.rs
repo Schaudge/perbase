@@ -161,7 +161,7 @@ lazy_static! {
 }
 
 /// pop the master frequency element in a (key cloneable) HashMap collection!
-pub fn pop_master_frequent_pair<T>(collection: &HashMap<T, usize>) -> (usize, T)
+pub fn make_master_frequent_pair<T>(collection: &HashMap<T, usize>) -> (usize, T)
     where T: Hash + Eq + Ord + Clone + Default, {
 
     let mut heap = BinaryHeap::with_capacity(3);
