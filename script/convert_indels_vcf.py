@@ -43,14 +43,15 @@ def convert_to_vcf(sorted_indel_list, vcf_output="check.vcf", sample_id="XXX",
             vcf_out.write(vcf_record_line + "\n")
 
 
-def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_indels_length=5,
+def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_indels_length=5, prefix_context_length=10,
                               partition_coefficient=1.2) -> list:
     """
     create standard review information from perbase output file
     only for long deletion (currently)!
     :param perbase_result_path: perbase output file
-    :param min_indels_counts: the minimum indel counts for postive mutation
+    :param min_indels_counts: the minimum indel counts for positive mutation
     :param min_indels_length: the minimum length for successive indels
+    :param prefix_context_length: site up/down stream seq length for indel context
     :param partition_coefficient: used for separate two adjacent indels events
     :return: list []
     """
@@ -64,7 +65,7 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
         with open(perbase_result_path) as pinput:
             next(pinput)
             for line in pinput:
-                __, chrom, pos, ref, depth, a, c, g, t, __, ins, __, __, dels, context_seq, master_count, __, __, near_max = line.strip().split("\t")
+                __, chrom, pos, ref, depth, a, c, g, t, __, __, ins_seq, ins_count, dels, context_seq, master_count, __, __, near_max = line.strip().split("\t")
                 position = int(pos)
                 del_master_count = int(master_count)
                 ref_count = int(a) if ref == "A" else (int(c) if ref == "C" else (int(g) if ref == "G" else int(t)))
@@ -91,18 +92,18 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                                 if deletion_back_size < position - del_pos:
                                     deletion_back_size = position - del_pos + 1
                         under_trimmed_seq = preceding_sequence
-                        prefix_context_length = 10
+                        context_seq_length = prefix_context_length
                         if preceding_del_size > 0:
                             under_trimmed_seq = preceding_sequence[0:len(preceding_sequence) - deletion_back_size]
-                            prefix_context_length = 10 - deletion_back_size + preceding_del_size
-                            preceding_seq_pair = (preceding_sequence[-1 * deletion_back_size:], context_seq[prefix_context_length:10])
+                            context_seq_length = 10 - deletion_back_size + preceding_del_size
+                            preceding_seq_pair = (preceding_sequence[-1 * deletion_back_size:], context_seq[context_seq_length:10])
                             position -= (deletion_back_size - 1)
                         preceding_seq_len = len(under_trimmed_seq)
-                        min_compare_size = min(preceding_seq_len, prefix_context_length)
-                        if context_seq[prefix_context_length - min_compare_size:prefix_context_length] != \
+                        min_compare_size = min(preceding_seq_len, context_seq_length)
+                        if context_seq[context_seq_length - min_compare_size:context_seq_length] != \
                                 under_trimmed_seq[preceding_seq_len - min_compare_size:]:
                             for px in range(min_compare_size, 0, -1):
-                                if context_seq[prefix_context_length - px] != under_trimmed_seq[preceding_seq_len - px]:
+                                if context_seq[context_seq_length - px] != under_trimmed_seq[preceding_seq_len - px]:
                                     preceding_seq_pair = (preceding_sequence[len(preceding_sequence)-px:], context_seq[10-px:10])
                                     position = position - px + 1
                                     break
@@ -132,6 +133,10 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                         successive_segment_location[2] += ref
                         successive_segment_stats = [raw + add for raw, add
                                                     in zip(successive_segment_stats, [0, ref_count, 0, int(depth), 0])]
+                        # rare case for small insertion after long deletion, need padding the insertion seq
+                        # TODO: too long insertion (beyond to context length) will cause wrong result
+                        if successive_segment_stats[4] * 0.96 <= int(ins_count) < successive_segment_stats[4] * 1.2:
+                            successive_segment_stats[0] -= len(ins_seq)
                     else:
                         opened_successive_seq = False
             if successive_segment_stats[0] >= min_indels_length:
