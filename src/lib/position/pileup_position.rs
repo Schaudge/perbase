@@ -272,6 +272,7 @@ impl PileupPosition {
     }
 
     /// update the indels statistic, after all reads were evaluated
+    #[inline]
     pub fn update_indels_statistic(&mut self) -> () {
         (self.ins_seq_count, self.ins_master_seq) = make_master_frequent_pair(&self.ins_seq_map);
         (self.del_seq_count, self.del_context_seq) = make_master_frequent_pair(&self.del_seq_map);
