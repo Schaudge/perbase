@@ -69,7 +69,7 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                 position = int(pos)
                 del_master_count = int(master_count)
                 ref_count = int(a) if ref == "A" else (int(c) if ref == "C" else (int(g) if ref == "G" else int(t)))
-                if chrom != successive_segment_location[0] or position > successive_segment_location[1] + 200:
+                if chrom != successive_segment_location[0] or position > successive_segment_location[1] + 120:
                     preceding_sequence = ""
                     preceding_del_list = []
                     if successive_segment_stats[0] >= min_indels_length:
@@ -112,13 +112,15 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                         opened_successive_seq = True
                     elif opened_successive_seq and len(successive_segment_location[2]) < successive_segment_stats[0] + len(successive_segment_location[3]):
                         successive_segment_location[2] += ref
+                        this_del = 1 if int(dels) > successive_segment_stats[4] * 0.768 else 0
                         successive_segment_stats = [raw + add for raw, add
-                                                    in zip(successive_segment_stats, [1, ref_count, int(dels), int(depth), 0])]
+                                                    in zip(successive_segment_stats, [this_del, ref_count, int(dels), int(depth), 0])]
                 elif opened_successive_seq and int(dels) > min_indels_counts and \
                         len(successive_segment_location[2]) < successive_segment_stats[0] + len(successive_segment_location[3]):
                     estimated_del_depth = int(dels) * (len(successive_segment_location[2]) - 1)
-                    same_del_increase = 1 if estimated_del_depth >= successive_segment_stats[2] * 0.9 or \
-                                             (int(dels) > 201 and estimated_del_depth >= successive_segment_stats[2] * 0.7) else 0
+                    same_del_increase = 1 if estimated_del_depth >= successive_segment_stats[2] * 0.9 or (
+                            int(dels) > 200 and estimated_del_depth >= successive_segment_stats[2] * 0.7) or (
+                            int(dels) < 13 and estimated_del_depth >= successive_segment_stats[2] - 2) else 0
                     successive_segment_location[2] += ref
                     successive_segment_stats = [raw + add for raw, add
                                                 in zip(successive_segment_stats, [same_del_increase, ref_count, int(dels), int(depth), 0])]
