@@ -26,11 +26,17 @@ def convert_to_vcf(sorted_indel_list, vcf_output="check.vcf", sample_id="XXX",
             vcf_out.write(line.format(sample_id))
         for record in sorted_indel_list:
             chrom, position, ref, alt, del_len, ref_count, alt_count, total_depth, __ = record
-            variation_range = len(ref) if len(ref) > len(alt) else len(alt)
-            mean_ref_count = round(int(ref_count)/variation_range)
-            mean_alt_count = round(int(alt_count)/int(del_len))
-            mean_depth = round(int(total_depth)/variation_range)
-            mean_vaf = int(mean_alt_count)/mean_depth
+            if ref_count < 1:  # for insert case
+                mean_ref_count = total_depth - alt_count
+                mean_alt_count = alt_count
+                mean_depth = total_depth
+                mean_vaf = alt_count/total_depth
+            else:  # for complex deletion case
+                variation_range = len(ref) if len(ref) > len(alt) else len(alt)
+                mean_ref_count = round(int(ref_count)/variation_range)
+                mean_alt_count = round(int(alt_count)/int(del_len))
+                mean_depth = round(int(total_depth)/variation_range)
+                mean_vaf = int(mean_alt_count)/mean_depth
             if ref[-1] == alt[-1]:
                 pentail_trim_len = min(len(ref), len(alt))
                 for reverse in range(-1, -1 * pentail_trim_len, -1):
@@ -58,10 +64,13 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
     complement_indels_list = []
     successive_segment_location = [0, 0, "", ""]     # [chromosome, position, ref, alt]
     successive_segment_stats = [0, 0, 0, 0, 0]       # [del_length, ref_counts, alt_counts, total_depth, master_count]
+    insert_segment_location = [0, 0, "", ""]
+    insert_segment_stats = [0, 0, 0, 0, 0]
+    insert_successive_seq = ""
     preceding_sequence = ""
     preceding_del_list = []
     if path.exists(perbase_result_path):
-        opened_successive_seq = False
+        opened_successive_seq, opened_insert_seq = False, False
         with open(perbase_result_path) as pinput:
             next(pinput)
             for line in pinput:
@@ -69,6 +78,7 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                 position = int(pos)
                 del_master_count = int(master_count)
                 ref_count = int(a) if ref == "A" else (int(c) if ref == "C" else (int(g) if ref == "G" else int(t)))
+                # 1. parse the insert sequence case:
                 if chrom != successive_segment_location[0] or position > successive_segment_location[1] + 120:
                     preceding_sequence = ""
                     preceding_del_list = []
@@ -77,6 +87,9 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                             alt_trim_length = len(successive_segment_location[2]) - successive_segment_stats[0]
                             successive_segment_location[3] = successive_segment_location[3][0:alt_trim_length]
                         complement_indels_list.append(successive_segment_location + successive_segment_stats)
+                    if opened_insert_seq:
+                        complement_indels_list.append(insert_segment_location + insert_segment_stats)
+                        opened_insert_seq = False
                     successive_segment_location = [chrom, position, "", ""]
                     successive_segment_stats = [0, 0, 0, 0, 0]
                 preceding_sequence += ref
@@ -141,6 +154,27 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                             successive_segment_stats[0] -= len(ins_seq)
                     else:
                         opened_successive_seq = False
+
+                # 2. parse the insert sequence case:
+                if not opened_successive_seq and not opened_insert_seq and int(ins_count) > min_indels_counts and len(ins_seq) > 2:
+                    insert_segment_location = [chrom, pos, ref, ref + ins_seq]
+                    insert_segment_stats = [len(ins_seq), 0, int(ins_count), int(depth), int(ins_count)]
+                    insert_successive_seq = ""
+                    opened_insert_seq = True
+                elif not opened_successive_seq and opened_insert_seq and len(insert_segment_stats[2]) < 6:
+                    insert_successive_seq += ref
+                    if int(ins_count) > min_indels_counts and len(ins_seq) > 2 and int(ins_count) > 1.2 * insert_segment_stats[-1]:
+                        insert_segment_location = [chrom, pos, ref, ref + ins_seq]
+                        insert_segment_stats = [len(ins_seq), 0, int(ins_count), int(depth), int(ins_count)]
+                        insert_successive_seq = ""
+                    elif int(ins_count) > min_indels_counts and len(ins_seq) > 2 and int(ins_count) > 0.9 * insert_segment_stats[-1]:
+                        insert_segment_location[2] += insert_successive_seq
+                        insert_segment_location[3] += (insert_successive_seq + ins_seq)
+                        insert_successive_seq = ""
+                elif not opened_successive_seq and opened_insert_seq and len(insert_segment_stats[2]) > 6:
+                    complement_indels_list.append(insert_segment_location + insert_segment_stats)
+                    opened_insert_seq = False
+
             if successive_segment_stats[0] >= min_indels_length:
                 if len(successive_segment_location[2]) <= successive_segment_stats[0] + len(successive_segment_location[3]):
                     alt_trim_length = len(successive_segment_location[2]) - successive_segment_stats[0]
