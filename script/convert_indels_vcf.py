@@ -161,17 +161,17 @@ def fetch_pential_long_indels(perbase_result_path, min_indels_counts=4, min_inde
                     insert_segment_stats = [len(ins_seq), 0, int(ins_count), int(depth), int(ins_count)]
                     insert_successive_seq = ""
                     opened_insert_seq = True
-                elif not opened_successive_seq and opened_insert_seq and len(insert_segment_stats[2]) < 6:
+                elif not opened_successive_seq and opened_insert_seq and len(insert_successive_seq) < 6:
                     insert_successive_seq += ref
                     if int(ins_count) > min_indels_counts and len(ins_seq) > 2 and int(ins_count) > 1.2 * insert_segment_stats[-1]:
                         insert_segment_location = [chrom, pos, ref, ref + ins_seq]
                         insert_segment_stats = [len(ins_seq), 0, int(ins_count), int(depth), int(ins_count)]
                         insert_successive_seq = ""
-                    elif int(ins_count) > min_indels_counts and len(ins_seq) > 2 and int(ins_count) > 0.9 * insert_segment_stats[-1]:
+                    elif int(ins_count) > min_indels_counts and len(ins_seq) > 1 and int(ins_count) > 0.9 * insert_segment_stats[-1]:
                         insert_segment_location[2] += insert_successive_seq
                         insert_segment_location[3] += (insert_successive_seq + ins_seq)
                         insert_successive_seq = ""
-                elif not opened_successive_seq and opened_insert_seq and len(insert_segment_stats[2]) > 6:
+                elif not opened_successive_seq and opened_insert_seq:
                     complement_indels_list.append(insert_segment_location + insert_segment_stats)
                     opened_insert_seq = False
 
