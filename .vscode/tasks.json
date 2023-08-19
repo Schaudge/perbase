@@ -1,0 +1,25 @@
+{
+    // the preLauch tasks were needed before the program in launch.json
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "cargo",
+            "command": "build",    // default, build debug binary
+            "group": { 
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "release",
+            "type": "cargo",
+            "command": "build",
+            "args": ["--release"], // build release version binary into  target/release/ directory
+            "group": { 
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "perbase debug",
+            "program": "${workspaceFolder}/target/debug/perbase",
+            "args": [
+                "-h", 
+            ],
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "preLaunchTask": "build"  // "label" value in tasks.json
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "perbase run",
+            "program": "${workspaceFolder}/target/release/perbase",
+            "args": [
+                "base-depth",
+                "${workspaceFolder}/test/test.bam",
+                "-b", "test/test.bed",
+                "--threads", "2"
+            ],
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "preLaunchTask": "release"  // "label" value in tasks.json
+        },
+    ]
+}

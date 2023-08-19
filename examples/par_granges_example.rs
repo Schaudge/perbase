@@ -85,15 +85,15 @@ fn main() -> Result<()> {
 
     // Create the region processor
     let basic_processor = BasicProcessor {
-        bamfile: PathBuf::from("/home/yuanshenran/datasets/bam/gzy210418101_g_16_tumor_recal.bam"),
+        bamfile: PathBuf::from("/home/yuanshenran/datasets/bam/egfr_complex_exon19.bam"),
         read_filter: read_filter,
     };
 
     // Create a par_granges runner
     let par_granges_runner = par_granges::ParGranges::new(
-        PathBuf::from("/home/yuanshenran/datasets/bam/gzy210418101_g_16_tumor_recal.bam"),  // pass in bam
+        PathBuf::from("/home/yuanshenran/datasets/bam/egfr_complex_exon19.bam"),  // pass in bam
         Some(PathBuf::from("/yunying/ref/human/b37/b37_Homo_sapiens_assembly19.fasta")),   // optional ref fasta
-        Some(PathBuf::from("/home/yuanshenran/datasets/bam/complex/egfr_exon20_insertion.bed")), // bedfile to narrow regions
+        Some(PathBuf::from("/home/yuanshenran/datasets/bam/egfr_complex_exon19.bed")), // bedfile to narrow regions
         None, // optional bcf/vcf file to specify positions of interest
         true, // merge overlap in bed or vcf
         None, // optional allowed number of threads, defaults to max
