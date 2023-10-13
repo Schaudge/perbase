@@ -110,7 +110,7 @@ pub struct BaseDepth {
 
     /// Set the max depth for a pileup. If a positions depth is within 1% of max-depth the `NEAR_MAX_DEPTH`
     /// output field will be set to true and that position should be viewed as suspect.
-    #[structopt(long, short = "D", default_value = "100000")]
+    #[structopt(long, short = "D", default_value = "2000000")]
     max_depth: u32,
 }
 

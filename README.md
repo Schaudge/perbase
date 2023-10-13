@@ -151,7 +151,7 @@ OPTIONS:
 
     -D, --max-depth <max-depth>
             Set the max depth for a pileup. If a positions depth is within 1% of max-depth the `NEAR_MAX_DEPTH` output
-            field will be set to true and that position should be viewed as suspect [default: 100000]
+            field will be set to true and that position should be viewed as suspect [default: 2000000]
     -Q, --min-base-quality-score <min-base-quality-score>
             Minium base quality for a base to be counted toward [A, C, T, G]. If the base is less than the specified
             quality score it will instead be counted as an `N`. If nothing is set for this no cutoff will be applied
