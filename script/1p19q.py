@@ -27,6 +27,7 @@ def generate_writeline(perbase_filename: str, rs_pos_dict: dict):
                 if ordered_idx != current_idx:
                     out_list.append(rs_pos_dict.pop(ordered_idx))
                 else:
+                    rs_pos_dict.pop(ordered_idx)
                     current_idx = ":"   # set to null key for break while loop!
                     POS, DEPTH, A, C, G, T, N = [int(i) for i in [POS, DEPTH, A, C, G, T, N]]
                     base_depth_list = [A, C, G, T, N]
