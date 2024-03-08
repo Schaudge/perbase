@@ -24,25 +24,24 @@ def generate_ref_dict(fasta):
 def deal_with_wig(perbase_file, rf_dict, out_file):
     sta_list = [['seqName', 'pos', 'ref', 'A', 'C', 'G', 'T', 'N', 'Cpg', 'NonCpg']]
     with open(perbase_file, 'r') as f_in:
-        data_perbase_list = [i.split('\t') for i in f_in.readlines()]
-    for line_list in data_perbase_list[1:]:
-        REF, POS, REF_BASE, DEPTH, A, C, G, T, N = line_list[:9]
-        POS, DEPTH, A, C, G, T, N = [int(i) for i in [POS, DEPTH, A, C, G, T, N]]
-        ref_seq = rf_dict[REF]
-        Cpg = 0
-        NoCpg = 0
-        if ref_seq[POS] == 'G' and ref_seq[POS-1] == 'C':
-            if C + T != 0:
-                Cpg = C / (C + T)
-        elif (POS+2) > len(ref_seq):
-            if C + T != 0:
-                NoCpg = C / (C + T)
-        else:
-            if C + T != 0:
-                NoCpg = C / (C + T)
-        write_line = [REF, POS, REF_BASE, A, C, G, T, N, Cpg, NoCpg]
-        sta_list.append(write_line)
-    write_list_out(sta_list, out_file)
+        for line in f_in:
+            __, CHROM, POS, REF_BASE, DEPTH, A, C, G, T, N = line.strip().split("\t")[:10]
+            POS, DEPTH, A, C, G, T, N = [int(i) for i in [POS, DEPTH, A, C, G, T, N]]
+            ref_seq = rf_dict[CHROM]
+            Cpg = 0
+            NoCpg = 0
+            if ref_seq[POS] == 'G' and ref_seq[POS-1] == 'C':
+                if C + T != 0:
+                    Cpg = C / (C + T)
+            elif (POS+2) > len(ref_seq):
+                if C + T != 0:
+                    NoCpg = C / (C + T)
+            else:
+                if C + T != 0:
+                    NoCpg = C / (C + T)
+            write_line = [CHROM, POS, REF_BASE, A, C, G, T, N, Cpg, NoCpg]
+            sta_list.append(write_line)
+        write_list_out(sta_list, out_file)
     return sta_list
 
 
@@ -50,11 +49,11 @@ def final_result(sta_list, out_file):
     title_list = ['seqName', 'Total C to T conversions in CpG context', 'Total methylated C in CpG context', 'C methylated in CpG context']
     dat_dict = defaultdict(dict)
     for line in sta_list[1:]:
-        REF, POS, REF_BASE, A, C, G, T, N, Cpg, NoCpg = line
-        dat_dict[REF][POS] = {}
-        dat_dict[REF][POS]['ref'] = REF_BASE
-        dat_dict[REF][POS]['methy'] = C
-        dat_dict[REF][POS]['depth'] = T
+        CHROM, POS, REF_BASE, A, C, G, T, N, Cpg, NoCpg = line
+        dat_dict[CHROM][POS] = {}
+        dat_dict[CHROM][POS]['ref'] = REF_BASE
+        dat_dict[CHROM][POS]['methy'] = C
+        dat_dict[CHROM][POS]['depth'] = T
     for seqname in dat_dict:
         seqname_methy_reads_on_cpg = 0
         seqname_all_reads_on_cpg = 0
