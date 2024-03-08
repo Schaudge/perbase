@@ -24,6 +24,7 @@ def generate_ref_dict(fasta):
 def deal_with_wig(perbase_file, rf_dict, out_file):
     sta_list = [['seqName', 'pos', 'ref', 'A', 'C', 'G', 'T', 'N', 'Cpg', 'NonCpg']]
     with open(perbase_file, 'r') as f_in:
+        next(f_in)
         for line in f_in:
             __, CHROM, POS, REF_BASE, DEPTH, A, C, G, T, N = line.strip().split("\t")[:10]
             POS, DEPTH, A, C, G, T, N = [int(i) for i in [POS, DEPTH, A, C, G, T, N]]
